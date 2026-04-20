@@ -6,6 +6,7 @@
   "scripts": {
     "build": "vite build",
     "dev": "vite",
+    "preview": "vite preview",
     "dev:client": "vite",
     "dev:server": "npm --prefix backend run dev",
     "dev:full": "concurrently \"npm run dev:client\" \"npm run dev:server\""
