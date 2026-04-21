@@ -9,8 +9,6 @@ interface ProfileData {
   city: string;
   state: string;
   zipCode: string;
-  googleConnected?: boolean;
-  googlePicture?: string;
 }
 
 interface ProfileContextType {

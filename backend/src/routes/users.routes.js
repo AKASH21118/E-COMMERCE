@@ -6,15 +6,12 @@ import {
   getProfile, login, register, updateProfile,
   getAdminMobile, registerAdminMobile, updateAdminMobile,
   requestAdminOtp, changeAdminPassword,
-  googleAuth,
 } from '../controllers/users.controller.js';
 
 const router = Router();
 
 router.post('/register', asyncHandler(register));
 router.post('/login', asyncHandler(login));
-// Google OAuth sign-in / sign-up (no auth middleware – this IS the auth step)
-router.post('/google', asyncHandler(googleAuth));
 router.get('/me', authenticate, asyncHandler(getProfile));
 router.put('/me', authenticate, asyncHandler(updateProfile));
 

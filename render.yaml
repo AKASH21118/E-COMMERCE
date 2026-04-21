@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: clothing-store-backend
+    runtime: node
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    plan: free
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false        # Set this manually in Render dashboard → Environment
+      - key: JWT_SECRET
+        sync: false        # Set this manually in Render dashboard → Environment
+      - key: CLIENT_ORIGIN
+        value: https://inoutsite-three.vercel.app
+      - key: PAYMENT_PROVIDER
+        value: razorpay
+      - key: PAYMENT_CURRENCY
+        value: INR
+      - key: RAZORPAY_KEY_ID
+        sync: false
+      - key: RAZORPAY_KEY_SECRET
+        sync: false
+      - key: SMS_PROVIDER
+        value: fast2sms
+      - key: FAST2SMS_API_KEY
+        sync: false

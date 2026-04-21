@@ -7,7 +7,7 @@ async function ensureCart(cartId) {
     `
       INSERT INTO carts (id)
       VALUES (?)
-      ON DUPLICATE KEY UPDATE updated_at = CURRENT_TIMESTAMP
+      ON CONFLICT (id) DO UPDATE SET updated_at = CURRENT_TIMESTAMP
     `,
     [cartId],
   );
@@ -89,7 +89,7 @@ export async function addCartItem(req, res) {
     `
       INSERT INTO cart_items (cart_id, product_id, size, quantity)
       VALUES (?, ?, ?, ?)
-      ON DUPLICATE KEY UPDATE quantity = VALUES(quantity), updated_at = CURRENT_TIMESTAMP
+      ON CONFLICT (cart_id, product_id, size) DO UPDATE SET quantity = EXCLUDED.quantity, updated_at = CURRENT_TIMESTAMP
     `,
     [cartId, payload.productId, payload.size, payload.quantity],
   );

@@ -56,12 +56,12 @@ export const updateSectionContent = asyncHandler(async (req, res) => {
     throw new HttpError(400, 'No fields provided to update');
   }
 
-  // Upsert each key
+  // Upsert each key (PostgreSQL ON CONFLICT syntax)
   for (const [key_name, value] of entries) {
     await pool.query(
       `INSERT INTO homepage_content (section, key_name, value)
        VALUES (?, ?, ?)
-       ON DUPLICATE KEY UPDATE value = VALUES(value), updated_at = CURRENT_TIMESTAMP`,
+       ON CONFLICT (section, key_name) DO UPDATE SET value = EXCLUDED.value, updated_at = CURRENT_TIMESTAMP`,
       [section, key_name, String(value)],
     );
   }

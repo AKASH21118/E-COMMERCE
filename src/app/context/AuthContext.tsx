@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
-import { type AuthUser, getAuthToken, setAuthToken, loginUser, registerUser, googleAuthUser } from '../lib/api';
+import { type AuthUser, getAuthToken, setAuthToken, loginUser, registerUser } from '../lib/api';
 
 interface AuthContextValue {
   user: AuthUser | null;
@@ -7,7 +7,6 @@ interface AuthContextValue {
   isAdmin: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (payload: { firstName: string; lastName: string; email: string; password: string }) => Promise<void>;
-  googleSignIn: (accessToken: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -55,13 +54,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(result.user);
   };
 
-  // Sign in (or auto-register) via Google OAuth access_token
-  const googleSignIn = async (accessToken: string) => {
-    const result = await googleAuthUser(accessToken);
-    setAuthToken(result.token);
-    setUser(result.user);
-  };
-
   const logout = () => {
     setAuthToken(null);
     setUser(null);
@@ -71,7 +63,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isAdmin = user?.role === 'admin';
 
   return (
-    <AuthContext.Provider value={{ user, token, isAdmin, login, register, googleSignIn, logout }}>
+    <AuthContext.Provider value={{ user, token, isAdmin, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   );

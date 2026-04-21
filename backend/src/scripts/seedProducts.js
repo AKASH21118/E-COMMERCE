@@ -203,14 +203,14 @@ async function seed() {
         `
           INSERT INTO products (id, name, price, category, description, image_path, is_new_arrival, is_best_seller)
           VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-          ON DUPLICATE KEY UPDATE
-            name = VALUES(name),
-            price = VALUES(price),
-            category = VALUES(category),
-            description = VALUES(description),
-            image_path = VALUES(image_path),
-            is_new_arrival = VALUES(is_new_arrival),
-            is_best_seller = VALUES(is_best_seller),
+          ON CONFLICT (id) DO UPDATE SET
+            name = EXCLUDED.name,
+            price = EXCLUDED.price,
+            category = EXCLUDED.category,
+            description = EXCLUDED.description,
+            image_path = EXCLUDED.image_path,
+            is_new_arrival = EXCLUDED.is_new_arrival,
+            is_best_seller = EXCLUDED.is_best_seller,
             updated_at = CURRENT_TIMESTAMP
         `,
         [
