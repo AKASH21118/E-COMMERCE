@@ -10,7 +10,18 @@ import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 const app = express();
 
 app.use(helmet({ crossOriginResourcePolicy: false }));
-app.use(cors({ origin: env.clientOrigin, credentials: true }));
+app.use(cors({
+  origin(origin, callback) {
+    // Allow requests with no origin (curl, mobile apps, server-to-server)
+    if (!origin) return callback(null, true);
+    // Allow the configured production origin
+    if (origin === env.clientOrigin) return callback(null, true);
+    // Allow any Vercel preview deployment for this project
+    if (/https:\/\/inoutsite(-[a-z0-9]+)*-vsharishwaran-2571s-projects\.vercel\.app$/.test(origin)) return callback(null, true);
+    callback(new Error(`CORS: origin ${origin} not allowed`));
+  },
+  credentials: true,
+}));
 app.use(morgan('dev'));
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true }));
