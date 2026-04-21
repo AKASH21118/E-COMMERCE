@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
-import { User, MapPin, Package, Heart, LogOut, Lock, ChevronDown, ChevronUp, Trash2 } from 'lucide-react';
+import { User, MapPin, Package, Heart, LogOut, Lock, ChevronDown, ChevronUp, Trash2, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useGoogleLogin } from '@react-oauth/google';
+import { useAuth } from '../context/AuthContext';
 import { useProfile } from '../context/ProfileContext';
 import { useWishlist } from '../context/WishlistContext';
 import { fetchMyOrders, type MyOrderSummary } from '../lib/api';
 import { Link } from 'react-router';
 
+// ── Shared Google SVG icon ────────────────────────────────────────────────
 const GOOGLE_ICON = (
   <svg viewBox="0 0 24 24" className="w-4 h-4" xmlns="http://www.w3.org/2000/svg">
     <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
@@ -39,13 +41,238 @@ function GoogleLoginButton({ loading, connected, onSuccess, onStart, onError }: 
   );
 }
 
+// ── Google button used inside the auth gate ──────────────────────────────
+type GoogleAuthButtonProps = {
+  loading: boolean;
+  onSuccess: (tokenResponse: { access_token: string }) => void;
+  onStart: () => void;
+  onError: () => void;
+};
+
+function GoogleAuthButton({ loading, onSuccess, onStart, onError }: GoogleAuthButtonProps) {
+  const googleLogin = useGoogleLogin({ onSuccess, onError });
+  return (
+    <button
+      type="button"
+      onClick={() => { onStart(); googleLogin(); }}
+      disabled={loading}
+      className="w-full flex items-center justify-center gap-3 border border-border bg-background py-3 text-sm font-medium hover:bg-muted/30 transition-colors disabled:opacity-60"
+    >
+      {loading ? <Loader2 size={16} className="animate-spin" /> : GOOGLE_ICON}
+      {loading ? 'Signing in...' : 'Continue with Google'}
+    </button>
+  );
+}
+
+// ── Auth gate: shown when user is not logged in ──────────────────────────
+function AccountGate() {
+  const { login, register, googleSignIn } = useAuth();
+  const [mode, setMode] = useState<'login' | 'register'>('login');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const hasGoogleAuth = !!(import.meta.env.VITE_GOOGLE_CLIENT_ID);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+    try {
+      if (mode === 'login') {
+        await login(email, password);
+      } else {
+        if (!firstName.trim() || !lastName.trim()) {
+          setError('Please enter your first and last name');
+          return;
+        }
+        await register({ firstName, lastName, email, password });
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleSuccess = async (tokenResponse: { access_token: string }) => {
+    try {
+      await googleSignIn(tokenResponse.access_token);
+      // AuthContext sets the user; Profile component re-renders automatically
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Google sign-in failed. Please try again.');
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-[70vh] flex items-center justify-center px-4 py-16">
+      <div className="w-full max-w-[420px]">
+        <h1
+          style={{ fontFamily: 'var(--font-display)' }}
+          className="text-4xl mb-8 tracking-tight text-center"
+        >
+          My Account
+        </h1>
+
+        {/* Sign In / Create Account toggle */}
+        <div className="flex border-b border-border mb-6">
+          <button
+            onClick={() => { setMode('login'); setError(''); }}
+            className={`flex-1 py-2.5 text-sm tracking-wide transition-colors ${
+              mode === 'login' ? 'border-b-2 border-foreground font-semibold' : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            Sign In
+          </button>
+          <button
+            onClick={() => { setMode('register'); setError(''); }}
+            className={`flex-1 py-2.5 text-sm tracking-wide transition-colors ${
+              mode === 'register' ? 'border-b-2 border-foreground font-semibold' : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            Create Account
+          </button>
+        </div>
+
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 text-sm mb-4">
+            {error}
+          </div>
+        )}
+
+        {/* Google sign-in button – only rendered if client ID is configured */}
+        {hasGoogleAuth && (
+          <>
+            <GoogleAuthButton
+              loading={googleLoading}
+              onStart={() => { setGoogleLoading(true); setError(''); }}
+              onSuccess={handleGoogleSuccess}
+              onError={() => {
+                setGoogleLoading(false);
+                setError('Google sign-in was cancelled or failed. Please try again.');
+              }}
+            />
+            <div className="flex items-center gap-3 my-5">
+              <div className="flex-1 h-px bg-border" />
+              <span className="text-xs text-muted-foreground uppercase tracking-widest">or</span>
+              <div className="flex-1 h-px bg-border" />
+            </div>
+          </>
+        )}
+
+        {/* Email / Password form */}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {mode === 'register' && (
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs text-muted-foreground mb-1.5 uppercase tracking-wider">First Name</label>
+                <input
+                  type="text"
+                  required
+                  value={firstName}
+                  onChange={e => setFirstName(e.target.value)}
+                  className="w-full px-4 py-3 border border-border bg-input-background focus:outline-none focus:border-foreground transition-colors text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-muted-foreground mb-1.5 uppercase tracking-wider">Last Name</label>
+                <input
+                  type="text"
+                  required
+                  value={lastName}
+                  onChange={e => setLastName(e.target.value)}
+                  className="w-full px-4 py-3 border border-border bg-input-background focus:outline-none focus:border-foreground transition-colors text-sm"
+                />
+              </div>
+            </div>
+          )}
+
+          <div>
+            <label className="block text-xs text-muted-foreground mb-1.5 uppercase tracking-wider">Email</label>
+            <input
+              type="email"
+              required
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              className="w-full px-4 py-3 border border-border bg-input-background focus:outline-none focus:border-foreground transition-colors text-sm"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs text-muted-foreground mb-1.5 uppercase tracking-wider">Password</label>
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                required
+                minLength={6}
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                className="w-full px-4 py-3 pr-11 border border-border bg-input-background focus:outline-none focus:border-foreground transition-colors text-sm"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(p => !p)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                tabIndex={-1}
+              >
+                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              </button>
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-foreground text-background py-3 text-sm tracking-widest uppercase hover:bg-foreground/90 transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
+          >
+            {loading && <Loader2 size={16} className="animate-spin" />}
+            {mode === 'login' ? 'Sign In' : 'Create Account'}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 export function Profile() {
+  const { user, logout } = useAuth();
   const [activeTab, setActiveTab] = useState<'profile' | 'orders' | 'addresses' | 'wishlist' | 'password'>('profile');
   const { profileData, updateProfile, isProfileComplete } = useProfile();
   const { items: wishlistItems, removeFromWishlist } = useWishlist();
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [formData, setFormData] = useState(profileData);
+
+  // When user logs in (email/password or Google), sync their server-side data
+  // into ProfileContext so the form is pre-populated.
+  useEffect(() => {
+    if (user) {
+      const synced = {
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
+        email: user.email || '',
+        phone: user.phone || '',
+        ...(user.address   && { address: user.address }),
+        ...(user.city      && { city: user.city }),
+        ...(user.state     && { state: user.state }),
+        ...(user.zipCode   && { zipCode: user.zipCode }),
+        ...(user.avatarUrl && { googlePicture: user.avatarUrl }),
+      };
+      updateProfile(synced);
+      setFormData(prev => ({ ...prev, ...synced }));
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]); // only re-sync when the logged-in user changes
+
+  // Show login/register gate when no user is authenticated
+  if (!user) return <AccountGate />;
 
   // Orders state
   const [orders, setOrders] = useState<MyOrderSummary[]>([]);
@@ -149,8 +376,8 @@ export function Profile() {
             <div className="bg-muted/30 p-6 mb-6">
               <div className="flex items-center gap-4 mb-6">
                 <div className="w-16 h-16 rounded-full overflow-hidden bg-foreground text-background flex items-center justify-center text-xl font-semibold shrink-0">
-                  {profileData.googlePicture
-                    ? <img src={profileData.googlePicture} alt="avatar" className="w-full h-full object-cover" />
+                  {(user.avatarUrl || profileData.googlePicture)
+                    ? <img src={user.avatarUrl || profileData.googlePicture} alt="avatar" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                     : avatarLetter
                   }
                 </div>
@@ -179,7 +406,7 @@ export function Profile() {
                   </button>
                 );
               })}
-              <button className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted/30 transition-colors text-destructive">
+              <button onClick={logout} className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted/30 transition-colors text-destructive">
                 <LogOut size={20} />
                 <span className="tracking-wide">Logout</span>
               </button>

@@ -342,12 +342,27 @@ export interface AuthUser {
   email: string;
   phone: string;
   role: string;
+  // Optional fields returned after login (populated from DB)
+  address?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  avatarUrl?: string;
+  googleId?: string | null;
 }
 
 export async function loginUser(email: string, password: string) {
   return request<{ user: AuthUser; token: string }>('/users/login', {
     method: 'POST',
     body: JSON.stringify({ email, password }),
+  });
+}
+
+/** Authenticate via Google OAuth access_token obtained on the frontend. */
+export async function googleAuthUser(access_token: string) {
+  return request<{ user: AuthUser; token: string }>('/users/google', {
+    method: 'POST',
+    body: JSON.stringify({ access_token }),
   });
 }
 

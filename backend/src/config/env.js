@@ -17,6 +17,8 @@ const env = {
   razorpayKeySecret: process.env.RAZORPAY_KEY_SECRET || '',
   fast2smsApiKey: process.env.FAST2SMS_API_KEY || '',
   smsProvider: process.env.SMS_PROVIDER || '',
+  // Google OAuth – used to verify that tokens were issued for this app
+  googleClientId: process.env.GOOGLE_CLIENT_ID || '',
 };
 
 export default env;

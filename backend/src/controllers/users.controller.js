@@ -25,12 +25,15 @@ function mapUser(row) {
     firstName: row.first_name,
     lastName: row.last_name,
     email: row.email,
-    phone: row.phone,
+    phone: row.phone || '',
     role: row.role,
-    address: row.address_line1,
-    city: row.city,
-    state: row.state,
-    zipCode: row.zip_code,
+    address: row.address_line1 || '',
+    city: row.city || '',
+    state: row.state || '',
+    zipCode: row.zip_code || '',
+    // Google-specific fields (null-safe)
+    avatarUrl: row.avatar_url || '',
+    googleId: row.google_id || null,
   };
 }
 
@@ -77,9 +80,91 @@ export async function login(req, res) {
     throw new HttpError(401, 'Invalid email or password');
   }
 
+  // Account was created via Google – it has no password
+  if (!user.password_hash) {
+    throw new HttpError(401, 'This account uses Google sign-in. Please use "Continue with Google" to log in.');
+  }
+
   const validPassword = await bcrypt.compare(payload.password, user.password_hash);
   if (!validPassword) {
     throw new HttpError(401, 'Invalid email or password');
+  }
+
+  res.json({ user: mapUser(user), token: signToken(user) });
+}
+
+// ── Google OAuth sign-in / sign-up ─────────────────────────────────────
+export async function googleAuth(req, res) {
+  const schema = z.object({ access_token: z.string().min(1) });
+  const { access_token } = schema.parse(req.body);
+
+  // Step 1 – Verify the access token is legitimate by calling Google's userinfo
+  // endpoint. Google only returns a valid response for unexpired, valid tokens.
+  const googleRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+    headers: { Authorization: `Bearer ${access_token}` },
+  });
+
+  if (!googleRes.ok) {
+    throw new HttpError(401, 'Invalid or expired Google access token');
+  }
+
+  const googleUser = await googleRes.json();
+  const { sub: googleId, email, name, picture } = googleUser;
+
+  // Google always returns an email for accounts with email scope, but guard anyway
+  if (!email) {
+    throw new HttpError(400, 'Google account must have a verified email address');
+  }
+
+  // Optional: if GOOGLE_CLIENT_ID is set, verify the token audience via tokeninfo
+  if (env.googleClientId) {
+    const tokenInfoRes = await fetch(
+      `https://oauth2.googleapis.com/tokeninfo?access_token=${encodeURIComponent(access_token)}`,
+    );
+    if (tokenInfoRes.ok) {
+      const tokenInfo = await tokenInfoRes.json();
+      // azp is the authorized party (client that obtained the token)
+      const audience = tokenInfo.aud || tokenInfo.azp;
+      if (audience && audience !== env.googleClientId) {
+        throw new HttpError(401, 'Google token was not issued for this application');
+      }
+    }
+  }
+
+  // Step 2 – Parse the display name into first / last
+  const nameParts = (name || '').trim().split(' ');
+  const firstName = nameParts[0] || email.split('@')[0];
+  const lastName = nameParts.slice(1).join(' ');
+
+  // Step 3 – Find existing user by google_id OR email (handles account linking)
+  const [rows] = await pool.query(
+    'SELECT * FROM users WHERE google_id = ? OR email = ?',
+    [googleId, email],
+  );
+
+  let user;
+  if (rows.length > 0) {
+    user = rows[0];
+    // Link google_id and refresh avatar if this is the first Google sign-in
+    await pool.query(
+      `UPDATE users
+       SET google_id = ?,
+           avatar_url = CASE WHEN (avatar_url IS NULL OR avatar_url = '') THEN ? ELSE avatar_url END,
+           updated_at = CURRENT_TIMESTAMP
+       WHERE id = ?`,
+      [googleId, picture || '', user.id],
+    );
+    const [updated] = await pool.query('SELECT * FROM users WHERE id = ?', [user.id]);
+    user = updated[0];
+  } else {
+    // New user – create a Google-only account (no password_hash)
+    const [result] = await pool.query(
+      `INSERT INTO users (first_name, last_name, email, phone, password_hash, google_id, avatar_url, role)
+       VALUES (?, ?, ?, '', NULL, ?, ?, 'customer')`,
+      [firstName, lastName, email, googleId, picture || ''],
+    );
+    const [newUser] = await pool.query('SELECT * FROM users WHERE id = ?', [result.insertId]);
+    user = newUser[0];
   }
 
   res.json({ user: mapUser(user), token: signToken(user) });
