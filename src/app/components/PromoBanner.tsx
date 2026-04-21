@@ -104,6 +104,7 @@ export function PromoBanner() {
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.15, duration: 0.4 }}
+              className="hidden sm:inline-flex items-center"
               style={{ fontSize: 'clamp(10px, 1.5vw, 12px)', color: 'rgba(255,255,255,0.55)', letterSpacing: '0.04em' }}
             >
               <span className="promo-fire" aria-hidden="true" style={{ display: 'inline-block', position: 'relative', width: 20, height: 24, marginRight: 4, verticalAlign: 'middle', flexShrink: 0 }}>
@@ -136,18 +137,9 @@ export function PromoBanner() {
               style={{ fontSize: 'clamp(10px, 1.5vw, 12px)', color: 'rgba(255,255,255,0.4)', letterSpacing: '0.06em', fontVariantNumeric: 'tabular-nums' }}
             >
               Ends in&nbsp;
-              <AnimatePresence mode="popLayout">
-                <motion.span
-                  key={`${hours}${minutes}${seconds}`}
-                  initial={{ opacity: 0, y: -6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 6 }}
-                  transition={{ duration: 0.2 }}
-                  style={{ color: '#fff', fontWeight: 600, display: 'inline-block' }}
-                >
-                  {pad(hours)}h {pad(minutes)}m {pad(seconds)}s
-                </motion.span>
-              </AnimatePresence>
+              <span style={{ color: '#fff', fontWeight: 600 }}>
+                {pad(hours)}h {pad(minutes)}m {pad(seconds)}s
+              </span>
             </motion.span>
 
             {/* CTA */}
@@ -160,7 +152,7 @@ export function PromoBanner() {
             >
               <Link
                 to="/sale"
-                className="hidden sm:inline-block"
+                className="inline-block"
                 style={{
                   fontSize: 11,
                   fontWeight: 700,

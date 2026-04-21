@@ -78,7 +78,7 @@ export function HeroCarousel() {
         {/* ════════════════════════════════════
             MOBILE: image at TOP
             ════════════════════════════════════ */}
-        <div className="lg:hidden relative flex-shrink-0" style={{ height: 'clamp(250px, 44svh, 360px)' }}>
+        <div className="lg:hidden relative flex-shrink-0" style={{ height: '55svh' }}>
           <AnimatePresence mode="sync">
             <motion.img
               key={`mob-img-${current}`}
@@ -97,14 +97,23 @@ export function HeroCarousel() {
           <div
             aria-hidden
             className="absolute bottom-0 left-0 right-0 pointer-events-none"
-            style={{ height: '42%', background: 'linear-gradient(to top, #0f0f0f 0%, transparent 100%)' }}
+            style={{ height: '45%', background: 'linear-gradient(to top, rgba(10,10,10,0.85) 0%, transparent 100%)' }}
           />
+          {/* Mobile slide counter — top right of image */}
+          <div
+            className="absolute top-3 right-3 flex items-center gap-1 z-10 pointer-events-none select-none"
+            style={{ fontFamily: 'Inter, sans-serif', fontSize: '11px', letterSpacing: '0.1em', fontWeight: 500, color: 'rgba(255,255,255,0.7)' }}
+          >
+            <span style={{ color: '#fff', fontWeight: 600 }}>{String(current + 1).padStart(2, '0')}</span>
+            <span style={{ opacity: 0.4 }}>/</span>
+            <span>{String(slides.length).padStart(2, '0')}</span>
+          </div>
         </div>
 
         {/* ════════════════════════════════════
             LEFT PANEL: editorial content
             ════════════════════════════════════ */}
-        <div className="relative z-10 w-full lg:w-[45%] flex flex-col justify-start lg:justify-center py-5 sm:py-12 lg:py-16">
+        <div className="relative z-10 w-full lg:w-[42%] flex flex-col justify-start lg:justify-center py-0 sm:py-12 lg:py-16">
 
           {/* ── Brand red accent line (desktop, far left edge) ── */}
           <div
@@ -160,7 +169,7 @@ export function HeroCarousel() {
           </div>
 
           {/* ── Content ── */}
-            <div className="px-6 sm:px-12 lg:pl-[68px] xl:pl-24 lg:pr-10">
+            <div className="px-5 pt-7 pb-9 sm:pt-0 sm:pb-0 sm:px-12 lg:pl-[68px] xl:pl-24 lg:pr-10">
             <AnimatePresence mode="wait">
               <motion.div
                 key={`text-${current}`}
@@ -196,8 +205,8 @@ export function HeroCarousel() {
                 <h1
                   style={{
                     fontFamily: 'Cormorant Garamond, Playfair Display, Georgia, serif',
-                    fontSize: 'clamp(26px, 5.2vw, 88px)',
-                    lineHeight: 0.93,
+                    fontSize: 'clamp(32px, 5.2vw, 88px)',
+                    lineHeight: 1.05,
                     letterSpacing: '-0.02em',
                     color: '#ffffff',
                     margin: '0 0 14px 0',
@@ -235,13 +244,13 @@ export function HeroCarousel() {
                   }}
                   style={{
                     fontFamily: 'Inter, DM Sans, sans-serif',
-                    fontSize: 'clamp(11px, 1.35vw, 14px)',
+                    fontSize: 'clamp(13px, 1.35vw, 14px)',
                     fontWeight: 300,
                     letterSpacing: '0.03em',
                     lineHeight: 1.78,
                     color: 'rgba(255,255,255,0.50)',
                     maxWidth: '420px',
-                    marginBottom: 'clamp(16px, 2.4vw, 32px)',
+                    marginBottom: 'clamp(20px, 2.4vw, 32px)',
                   }}
                 >
                   {slide.description}
@@ -260,7 +269,7 @@ export function HeroCarousel() {
                   {/* CTA Button: white fill → outlined on hover */}
                   <Link
                     to={slide.ctaLink}
-                    className="inline-flex items-center gap-3 bg-white text-[#0f0f0f] hover:bg-transparent hover:text-white border border-white group transition-all duration-300"
+                    className="flex sm:inline-flex w-full sm:w-auto justify-center sm:justify-start items-center gap-3 bg-white text-[#0f0f0f] hover:bg-transparent hover:text-white border border-white group transition-all duration-300"
                     style={{
                       borderRadius: 0,
                       fontFamily: 'Inter, sans-serif',
@@ -268,9 +277,8 @@ export function HeroCarousel() {
                       fontWeight: 700,
                       letterSpacing: '0.15em',
                       textTransform: 'uppercase',
-                      padding: 'clamp(12px, 1.5vw, 15px) clamp(20px, 3vw, 32px)',
+                      padding: 'clamp(14px, 1.5vw, 15px) clamp(20px, 3vw, 32px)',
                       textDecoration: 'none',
-                      display: 'inline-flex',
                       marginBottom: 'clamp(14px, 2.2vw, 28px)',
                     }}
                   >
@@ -289,7 +297,7 @@ export function HeroCarousel() {
                           aria-label={`Go to slide ${i + 1}`}
                           style={{
                             height: '2px',
-                            width: i === current ? '48px' : '22px',
+                            width: i === current ? '32px' : '16px',
                             background: i === current ? '#ffffff' : 'rgba(255,255,255,0.22)',
                             border: 'none',
                             padding: 0,
@@ -354,9 +362,9 @@ export function HeroCarousel() {
             key={`desktop-img-${current}`}
             className="hidden lg:block absolute right-0 top-0 bottom-0"
             style={{
-              width: '62%',
+              width: '58%',
               height: '100%',
-              clipPath: 'polygon(8% 0%, 100% 0%, 100% 100%, 0% 100%)',
+              clipPath: 'polygon(6% 0%, 100% 0%, 100% 100%, 0% 100%)',
               overflow: 'hidden',
             }}
             initial={{ opacity: 0, x: direction > 0 ? 55 : -55 }}
@@ -387,8 +395,7 @@ export function HeroCarousel() {
               style={{
                 position: 'absolute',
                 inset: 0,
-                background:
-                  'linear-gradient(to right, rgba(15,15,15,0.80) 0%, rgba(15,15,15,0.22) 22%, transparent 52%)',
+                background: 'linear-gradient(to right, rgba(10,10,10,0.50) 0%, transparent 35%)',
                 pointerEvents: 'none',
               }}
             />

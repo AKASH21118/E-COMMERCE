@@ -76,7 +76,7 @@ export function Navigation() {
           }}
         >
           <div className="max-w-[1400px] mx-auto px-3 sm:px-6 lg:px-10">
-            <div className="flex items-center h-[52px] sm:h-[60px]">
+            <div className="flex items-center h-[60px]">
               {/* ── Left: Logo ── */}
               <div className="flex-shrink-0 flex items-center gap-3">
                 {/* Mobile hamburger */}
@@ -174,7 +174,7 @@ export function Navigation() {
               </div>
 
               {/* ── Right: Icons ── */}
-              <div className="flex-shrink-0 flex items-center gap-3 sm:gap-4 lg:gap-5 ml-auto lg:ml-0">
+              <div className="flex-shrink-0 flex items-center gap-1.5 sm:gap-4 lg:gap-5 ml-auto lg:ml-0">
                 <Link
                   to="/search"
                   className="text-[#333] hover:text-[#3498db] transition-colors"
@@ -184,7 +184,7 @@ export function Navigation() {
                 </Link>
                 <Link
                   to="/profile"
-                  className="text-[#333] hover:text-[#3498db] transition-colors hidden md:block"
+                  className="text-[#333] hover:text-[#3498db] transition-colors"
                   aria-label="Profile"
                 >
                   <User size={19} strokeWidth={1.7} />
@@ -192,7 +192,7 @@ export function Navigation() {
                 {/* Wishlist */}
                 <Link
                   to="/profile"
-                  className="relative text-[#333] hover:text-[#3498db] transition-colors hidden md:block"
+                  className="relative text-[#333] hover:text-[#3498db] transition-colors"
                   aria-label="Wishlist"
                 >
                   <Heart size={19} strokeWidth={1.7} />
