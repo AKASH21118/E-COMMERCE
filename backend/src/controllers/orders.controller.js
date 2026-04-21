@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { pool } from '../config/db.js';
 import { verifyPaymentSignature } from '../services/payment.service.js';
 import { HttpError } from '../utils/httpError.js';
+import logger from '../utils/logger.js';
 
 const checkoutSchema = z.object({
   paymentMethod: z.enum(['upi', 'cod']),
@@ -29,6 +30,18 @@ const checkoutSchema = z.object({
 
 export async function createOrder(req, res) {
   const payload = checkoutSchema.parse(req.body);
+
+  // DUPLICATE PAYMENT PREVENTION: Check if this razorpay order_id already exists
+  if (payload.paymentOrderId) {
+    const [existing] = await pool.query(
+      'SELECT id FROM orders WHERE payment_order_id = ?',
+      [payload.paymentOrderId],
+    );
+    if (existing.length > 0) {
+      logger.warn('Duplicate payment attempt', { paymentOrderId: payload.paymentOrderId });
+      throw new HttpError(409, 'This payment has already been processed');
+    }
+  }
 
   // Skip payment verification for COD orders
   if (payload.paymentMethod !== 'cod') {
@@ -194,6 +207,14 @@ export async function createOrder(req, res) {
     }
 
     await connection.commit();
+
+    logger.info('Order created', {
+      orderId: orderResult.insertId,
+      paymentOrderId: payload.paymentOrderId,
+      totalAmount,
+      itemCount: orderItems.length,
+    });
+
     res.status(201).json({
       message: 'Order created successfully',
       orderId: String(orderResult.insertId),
