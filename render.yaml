@@ -3,7 +3,7 @@ services:
     name: clothing-store-backend
     runtime: node
     rootDir: backend
-    buildCommand: npm install
+    buildCommand: pip install yt-dlp 2>/dev/null || true ; npm install
     startCommand: npm start
     plan: free
     envVars:

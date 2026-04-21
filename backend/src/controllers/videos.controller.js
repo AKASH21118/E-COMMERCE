@@ -161,6 +161,9 @@ export const downloadInstagramVideo = asyncHandler(async (req, res) => {
       if (/private|login|restricted/i.test(msg)) {
         throw new HttpError(422, 'This Instagram reel is private or restricted. Please download it manually and upload the MP4 file instead.');
       }
+      if (/ENOENT/.test(msg) || /spawn/.test(msg)) {
+        throw new HttpError(502, 'Auto-download is not available on this server. Please download the reel manually and upload the MP4 file instead.');
+      }
       throw new HttpError(502, `Failed to download Instagram video: ${msg.slice(0, 300)}`);
     }
   }
