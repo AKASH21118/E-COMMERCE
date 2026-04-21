@@ -65,8 +65,7 @@ export function HeroCarousel() {
 
   return (
     <section
-      className="relative bg-[#0f0f0f] overflow-hidden flex flex-col min-h-[620px] sm:min-h-[500px]"
-      style={{ height: '100svh', maxHeight: '900px' }}
+      className="relative bg-[#0f0f0f] overflow-hidden flex flex-col h-auto min-h-[560px] sm:min-h-[620px] lg:h-[100svh] lg:max-h-[900px]"
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
@@ -79,7 +78,7 @@ export function HeroCarousel() {
         {/* ════════════════════════════════════
             MOBILE: image at TOP
             ════════════════════════════════════ */}
-        <div className="lg:hidden relative flex-shrink-0" style={{ height: 'clamp(220px, 40svh, 340px)' }}>
+        <div className="lg:hidden relative flex-shrink-0" style={{ height: 'clamp(250px, 44svh, 360px)' }}>
           <AnimatePresence mode="sync">
             <motion.img
               key={`mob-img-${current}`}
@@ -90,21 +89,22 @@ export function HeroCarousel() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.7 }}
-              className="absolute inset-0 w-full h-full object-cover object-top"
+              className="absolute inset-0 w-full h-full object-cover"
+              style={{ objectPosition: 'center 18%' }}
             />
           </AnimatePresence>
           {/* bottom fade to dark */}
           <div
             aria-hidden
             className="absolute bottom-0 left-0 right-0 pointer-events-none"
-            style={{ height: '55%', background: 'linear-gradient(to top, #0f0f0f 0%, transparent 100%)' }}
+            style={{ height: '42%', background: 'linear-gradient(to top, #0f0f0f 0%, transparent 100%)' }}
           />
         </div>
 
         {/* ════════════════════════════════════
             LEFT PANEL: editorial content
             ════════════════════════════════════ */}
-        <div className="relative z-10 w-full lg:w-[45%] flex flex-col justify-center py-6 sm:py-12 lg:py-16">
+        <div className="relative z-10 w-full lg:w-[45%] flex flex-col justify-start lg:justify-center py-5 sm:py-12 lg:py-16">
 
           {/* ── Brand red accent line (desktop, far left edge) ── */}
           <div
