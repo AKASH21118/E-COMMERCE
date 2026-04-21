@@ -13,11 +13,16 @@ async function ensureSchema() {
   const schemaPath = path.resolve(process.cwd(), 'src', 'sql', 'schema.sql');
   const schemaSql = await fs.readFile(schemaPath, 'utf8');
 
-  // Split on semicolons, strip comments, filter blank statements
+  // Split on semicolons, strip comment lines, filter blank statements
   const statements = schemaSql
     .split(';')
-    .map(s => s.trim())
-    .filter(s => s.length > 0 && !s.startsWith('--'));
+    .map(s =>
+      s.split('\n')
+        .filter(line => !line.trim().startsWith('--'))
+        .join('\n')
+        .trim()
+    )
+    .filter(s => s.length > 0);
 
   for (const statement of statements) {
     await pool.query(statement);
