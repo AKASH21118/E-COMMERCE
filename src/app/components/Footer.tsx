@@ -17,11 +17,17 @@ const BRAND = {
 };
 
 const BROWSE_LINKS = [
-  { label: 'SHIRTS', to: '/category/shirts' },
-  { label: 'T-SHIRTS', to: '/category/tshirt' },
-  { label: 'PANTS', to: '/category/pants' },
-  { label: 'NEW ARRIVALS', to: '/new-arrivals' },
-  { label: 'BEST SELLERS', to: '/best-sellers' },
+  { label: 'All Products', to: '/all-products' },
+  { label: 'T-Shirts', to: '/tshirt' },
+  { label: 'Shirts', to: '/shirt' },
+  { label: 'Hoodies', to: '/hoodies' },
+  { label: 'Jeans', to: '/jeans' },
+  { label: 'Trousers', to: '/trousers' },
+  { label: 'Shorts', to: '/shorts' },
+  { label: 'Track Pants', to: '/trackpants' },
+  { label: 'New Arrivals', to: '/new-arrivals' },
+  { label: 'Best Sellers', to: '/best-sellers' },
+  { label: 'Sale / Offers', to: '/sale' },
 ];
 
 const POLICY_LINKS = [
