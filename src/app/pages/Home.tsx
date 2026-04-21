@@ -111,7 +111,7 @@ export function Home() {
           background: 'radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.5) 100%)',
         }} />
 
-        <div className="relative z-10 max-w-[1400px] mx-auto px-6 sm:px-10 lg:px-14">
+        <div className="relative z-10 max-w-[1400px] mx-auto px-6 sm:px-10 lg:px-14 text-center">
           <motion.div
             className="text-center mb-2"
             initial={{ opacity: 0, y: 16 }}

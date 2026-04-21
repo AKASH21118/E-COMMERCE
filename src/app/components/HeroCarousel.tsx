@@ -169,7 +169,7 @@ export function HeroCarousel() {
           </div>
 
           {/* ── Content ── */}
-            <div className="px-5 pt-7 pb-9 sm:pt-0 sm:pb-0 sm:px-12 lg:pl-[68px] xl:pl-24 lg:pr-10">
+            <div className="px-6 pt-7 pb-9 sm:pt-0 sm:pb-0 sm:px-12 lg:pl-[68px] xl:pl-24 lg:pr-10">
             <AnimatePresence mode="wait">
               <motion.div
                 key={`text-${current}`}
