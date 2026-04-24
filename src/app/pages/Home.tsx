@@ -393,6 +393,41 @@ export function Home() {
       ══════════════════════════════════════ */}
       <HomeReviews />
 
+      {/* ══════════════════════════════════════
+          WHOLESALE ENQUIRY CTA
+      ══════════════════════════════════════ */}
+      <section className="py-16 sm:py-24 bg-gradient-to-r from-[#8B0000] to-[#e00000]">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-10 lg:px-14 text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <h2
+              className="text-[28px] sm:text-[36px] font-extrabold text-white mb-3 leading-[1.1] tracking-[-0.02em]"
+              style={{ fontFamily: 'Playfair Display, Georgia, serif' }}
+            >
+              Looking for <span className="text-white/90">Bulk Orders?</span>
+            </h2>
+            <p className="text-white/80 text-[14px] sm:text-[16px] mb-8 max-w-2xl mx-auto">
+              Explore our wholesale catalogue and get special pricing for bulk purchases
+            </p>
+            <motion.a
+              href="https://inoutcatalogue.netlify.app"
+              target="_blank"
+              rel="noopener noreferrer"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="inline-flex items-center gap-2 px-8 sm:px-10 py-3.5 sm:py-4 bg-white text-[#8B0000] font-semibold text-[13px] sm:text-[14px] tracking-[0.08em] uppercase rounded-full transition-all duration-300 hover:shadow-lg"
+            >
+              Wholesale Enquiry
+              <ArrowRight size={16} className="transition-transform duration-300" />
+            </motion.a>
+          </motion.div>
+        </div>
+      </section>
+
     </div>
   );
 }
