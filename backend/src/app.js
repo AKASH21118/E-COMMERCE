@@ -3,9 +3,11 @@ import cors from 'cors';
 import express from 'express';
 import helmet from 'helmet';
 import morgan from 'morgan';
+import compression from 'compression';
 import env from './config/env.js';
 import apiRoutes from './routes/index.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
+import { globalLimiter } from './middleware/rateLimiter.js';
 
 const app = express();
 
@@ -24,10 +26,16 @@ app.use(cors({
   },
   credentials: true,
 }));
-app.use(morgan('dev'));
+app.use(morgan(env.nodeEnv === 'production' ? 'combined' : 'dev'));
+app.use(compression());
+app.use(globalLimiter);
+
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true }));
-app.use('/uploads', express.static(path.resolve(process.cwd(), 'uploads')));
+
+if (env.nodeEnv !== 'production') {
+  app.use('/uploads', express.static(path.resolve(process.cwd(), 'uploads')));
+}
 
 app.use('/api', apiRoutes);
 app.use(notFoundHandler);

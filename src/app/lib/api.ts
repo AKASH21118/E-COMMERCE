@@ -204,9 +204,10 @@ export async function adminReorderCarousel(order: { id: number; sortOrder: numbe
 }
 
 interface PaymentIntentPayload {
-  amount: number;
-  paymentMethod: 'upi' | 'card' | 'netbanking';
+  paymentMethod: 'upi' | 'cod';
   customerEmail?: string;
+  couponCode?: string;
+  items: Array<{ productId: number; quantity: number; size: 'S' | 'M' | 'L' | 'XL' }>;
 }
 
 export interface PaymentIntentResponse {
@@ -237,7 +238,7 @@ interface ShippingPayload {
 }
 
 interface OrderPayload {
-  paymentMethod: 'upi' | 'card' | 'netbanking';
+  paymentMethod: 'upi' | 'cod';
   paymentProvider: string;
   paymentOrderId: string;
   paymentReference: string;
@@ -415,7 +416,7 @@ export async function fetchAllOrders() {
 }
 
 export async function fetchOrderById(id: string) {
-  return request<OrderDetail>(`/orders/${id}`);
+  return request<OrderDetail>(`/orders/${id}`, { headers: authHeaders() });
 }
 
 export async function updateOrderStatus(id: string, status: string) {
@@ -438,8 +439,10 @@ export interface MyOrderSummary extends OrderSummary {
   items: OrderItem[];
 }
 
-export async function fetchMyOrders(email: string) {
-  return request<{ items: MyOrderSummary[] }>(`/orders/my-orders?email=${encodeURIComponent(email)}`);
+export async function fetchMyOrders() {
+  return request<{ items: MyOrderSummary[] }>('/orders/my-orders', {
+    headers: authHeaders(),
+  });
 }
 
 // ── Admin: Products ───────────────────────────────────────────────────────

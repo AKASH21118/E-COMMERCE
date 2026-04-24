@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react';
 import { createBrowserRouter } from 'react-router';
 import { Layout } from './components/Layout';
 import { Home } from './pages/Home';
@@ -13,21 +14,26 @@ import { BestSellers } from './pages/BestSellers';
 import { NotFound } from './pages/NotFound';
 import { Sale } from './pages/Sale';
 import { MyOrders } from './pages/MyOrders';
-import { AdminLogin } from './pages/admin/AdminLogin';
-import { AdminLayout } from './pages/admin/AdminLayout';
-import { AdminDashboard } from './pages/admin/AdminDashboard';
-import { AdminProducts } from './pages/admin/AdminProducts';
-import { AdminOrders } from './pages/admin/AdminOrders';
-import { AdminInventory } from './pages/admin/AdminInventory';
-import { AdminCustomers } from './pages/admin/AdminCustomers';
-import { AdminAnalytics } from './pages/admin/AdminAnalytics';
-import { AdminReviews } from './pages/admin/AdminReviews';
-import { AdminSettings } from './pages/admin/AdminSettings';
-import { AdminHomepage } from './pages/admin/AdminHomepage';
-import { AdminSaleProducts } from './pages/admin/AdminSaleProducts';
-import { AdminVideos } from './pages/admin/AdminVideos';
-import { AdminCarousel } from './pages/admin/AdminCarousel';
 import { AllProducts } from './pages/AllProducts';
+
+// Lazy load admin pages (heavy, only loaded when needed)
+const AdminLogin = lazy(() => import('./pages/admin/AdminLogin').then(m => ({ default: m.AdminLogin })));
+const AdminLayout = lazy(() => import('./pages/admin/AdminLayout').then(m => ({ default: m.AdminLayout })));
+const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard').then(m => ({ default: m.AdminDashboard })));
+const AdminProducts = lazy(() => import('./pages/admin/AdminProducts').then(m => ({ default: m.AdminProducts })));
+const AdminOrders = lazy(() => import('./pages/admin/AdminOrders').then(m => ({ default: m.AdminOrders })));
+const AdminInventory = lazy(() => import('./pages/admin/AdminInventory').then(m => ({ default: m.AdminInventory })));
+const AdminCustomers = lazy(() => import('./pages/admin/AdminCustomers').then(m => ({ default: m.AdminCustomers })));
+const AdminAnalytics = lazy(() => import('./pages/admin/AdminAnalytics').then(m => ({ default: m.AdminAnalytics })));
+const AdminReviews = lazy(() => import('./pages/admin/AdminReviews').then(m => ({ default: m.AdminReviews })));
+const AdminSettings = lazy(() => import('./pages/admin/AdminSettings').then(m => ({ default: m.AdminSettings })));
+const AdminHomepage = lazy(() => import('./pages/admin/AdminHomepage').then(m => ({ default: m.AdminHomepage })));
+const AdminSaleProducts = lazy(() => import('./pages/admin/AdminSaleProducts').then(m => ({ default: m.AdminSaleProducts })));
+const AdminVideos = lazy(() => import('./pages/admin/AdminVideos').then(m => ({ default: m.AdminVideos })));
+const AdminCarousel = lazy(() => import('./pages/admin/AdminCarousel').then(m => ({ default: m.AdminCarousel })));
+
+// Loading fallback component
+const LoadingFallback = () => <div style={{ padding: '2rem', textAlign: 'center', minHeight: '400px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Loading...</div>;
 
 export const router = createBrowserRouter([
   {
@@ -69,24 +75,121 @@ export const router = createBrowserRouter([
   {
     path: '/admin/login',
     Component: Layout,
-    children: [{ index: true, Component: AdminLogin }],
+    children: [
+      {
+        index: true,
+        Component: () => (
+          <Suspense fallback={<LoadingFallback />}>
+            <AdminLogin />
+          </Suspense>
+        ),
+      },
+    ],
   },
   {
     path: '/admin',
-    Component: AdminLayout,
+    Component: () => (
+      <Suspense fallback={<LoadingFallback />}>
+        <AdminLayout />
+      </Suspense>
+    ),
     children: [
-      { index: true, Component: AdminDashboard },
-      { path: 'products', Component: AdminProducts },
-      { path: 'inventory', Component: AdminInventory },
-      { path: 'orders', Component: AdminOrders },
-      { path: 'customers', Component: AdminCustomers },
-      { path: 'analytics', Component: AdminAnalytics },
-      { path: 'reviews', Component: AdminReviews },
-      { path: 'settings', Component: AdminSettings },
-      { path: 'homepage', Component: AdminHomepage },
-      { path: 'sale-products', Component: AdminSaleProducts },
-      { path: 'videos', Component: AdminVideos },
-      { path: 'carousel', Component: AdminCarousel },
+      {
+        index: true,
+        Component: () => (
+          <Suspense fallback={<LoadingFallback />}>
+            <AdminDashboard />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'products',
+        Component: () => (
+          <Suspense fallback={<LoadingFallback />}>
+            <AdminProducts />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'inventory',
+        Component: () => (
+          <Suspense fallback={<LoadingFallback />}>
+            <AdminInventory />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'orders',
+        Component: () => (
+          <Suspense fallback={<LoadingFallback />}>
+            <AdminOrders />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'customers',
+        Component: () => (
+          <Suspense fallback={<LoadingFallback />}>
+            <AdminCustomers />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'analytics',
+        Component: () => (
+          <Suspense fallback={<LoadingFallback />}>
+            <AdminAnalytics />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'reviews',
+        Component: () => (
+          <Suspense fallback={<LoadingFallback />}>
+            <AdminReviews />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'settings',
+        Component: () => (
+          <Suspense fallback={<LoadingFallback />}>
+            <AdminSettings />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'homepage',
+        Component: () => (
+          <Suspense fallback={<LoadingFallback />}>
+            <AdminHomepage />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'sale-products',
+        Component: () => (
+          <Suspense fallback={<LoadingFallback />}>
+            <AdminSaleProducts />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'videos',
+        Component: () => (
+          <Suspense fallback={<LoadingFallback />}>
+            <AdminVideos />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'carousel',
+        Component: () => (
+          <Suspense fallback={<LoadingFallback />}>
+            <AdminCarousel />
+          </Suspense>
+        ),
+      },
     ],
   },
 ]);

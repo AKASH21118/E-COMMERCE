@@ -209,3 +209,41 @@ INSERT INTO homepage_content (section, key_name, value) VALUES
 ('offer', 'endHour', '22'),
 ('hero', 'slides', '[{"badge":"🔥 HOT RIGHT NOW","title":["Hoodies That Hit","Different"],"description":"Oversized. Premium. Made for the modern gentleman.","cta":"Shop Hoodies","ctaLink":"/shop","image":"https://images.unsplash.com/photo-1552346154-21d32810aba3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1200","saveBadge":"SAVE 65%","saveSub":"Limited sizes left — order now"},{"badge":"⭐ NEW ARRIVAL","title":["Fresh Styles","Just Dropped"],"description":"New arrivals every week. Be the first to wear it.","cta":"Shop New Arrivals","ctaLink":"/new-arrivals","image":"https://images.unsplash.com/photo-1617724748068-691efeeaf542?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1200","saveBadge":"NEW IN","saveSub":"Spring / Summer 2026 Collection"},{"badge":"🏆 BESTSELLER","title":["Most Loved","Picks"],"description":"Trusted by thousands. Premium quality at unbeatable prices.","cta":"Shop Best Sellers","ctaLink":"/best-sellers","image":"https://images.unsplash.com/photo-1603252109303-2751441dd157?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1200","saveBadge":"TOP RATED","saveSub":"Most purchased this month"}]')
 ON CONFLICT (section, key_name) DO NOTHING;
+
+-- ── Performance Indexes ──────────────────────────────────────────────────────
+-- Products table indexes
+CREATE INDEX IF NOT EXISTS idx_products_category ON products(category);
+CREATE INDEX IF NOT EXISTS idx_products_is_new_arrival ON products(is_new_arrival);
+CREATE INDEX IF NOT EXISTS idx_products_is_best_seller ON products(is_best_seller);
+CREATE INDEX IF NOT EXISTS idx_products_is_on_offer ON products(is_on_offer);
+CREATE INDEX IF NOT EXISTS idx_products_created_at ON products(created_at DESC);
+
+-- Product inventory indexes
+CREATE INDEX IF NOT EXISTS idx_product_inventory_product_id ON product_inventory(product_id);
+CREATE INDEX IF NOT EXISTS idx_product_inventory_product_size ON product_inventory(product_id, size);
+
+-- Users table indexes
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
+
+-- Orders table indexes
+CREATE INDEX IF NOT EXISTS idx_orders_user_id ON orders(user_id);
+CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);
+CREATE INDEX IF NOT EXISTS idx_orders_created_at ON orders(created_at DESC);
+
+-- Order items indexes
+CREATE INDEX IF NOT EXISTS idx_order_items_order_id ON order_items(order_id);
+CREATE INDEX IF NOT EXISTS idx_order_items_product_id ON order_items(product_id);
+
+-- Cart items indexes
+CREATE INDEX IF NOT EXISTS idx_cart_items_cart_id ON cart_items(cart_id);
+CREATE INDEX IF NOT EXISTS idx_cart_items_product_id ON cart_items(product_id);
+
+-- Coupons and reviews indexes
+CREATE INDEX IF NOT EXISTS idx_coupons_code ON coupons(code);
+CREATE INDEX IF NOT EXISTS idx_coupons_is_active ON coupons(is_active);
+CREATE INDEX IF NOT EXISTS idx_reviews_product_id ON reviews(product_id);
+
+-- Carousel and videos indexes
+CREATE INDEX IF NOT EXISTS idx_carousel_items_product_id ON carousel_items(product_id);
+CREATE INDEX IF NOT EXISTS idx_shoppable_videos_is_active ON shoppable_videos(is_active);

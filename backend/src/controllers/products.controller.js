@@ -4,6 +4,8 @@ import { z } from 'zod';
 import { pool } from '../config/db.js';
 import { HttpError } from '../utils/httpError.js';
 import { mapProductRows } from '../utils/productMapper.js';
+import { getCached, setCached, invalidateCache } from '../services/cache.service.js';
+import logger from '../utils/logger.js';
 
 function removeUploadedImage(imagePath) {
   // Only remove local files (for backward compatibility)
@@ -38,7 +40,17 @@ function getNewImagePaths(req) {
   if (req.files && req.files.length > 0) {
     // Cloudinary: files have secure_url property
     // Local storage: files have filename property
-    return req.files.map(f => f.secure_url || `/uploads/products/${f.filename}`);
+    const paths = req.files.map(f => {
+      const url = f.secure_url || `/uploads/products/${f.filename}`;
+      if (!url) {
+        throw new HttpError(500, 'Image upload failed - no URL returned from storage');
+      }
+      return url;
+    });
+    if (paths.length === 0) {
+      throw new HttpError(500, 'Image upload failed - no files processed');
+    }
+    return paths;
   }
   return [];
 }
@@ -112,15 +124,35 @@ export async function listProducts(req, res) {
     params.search = `%${req.query.search}%`;
   }
 
+  // Generate cache key based on filters
+  const cacheKey = `products:list:${JSON.stringify(filters.sort())}:${JSON.stringify(params)}`;
+  
+  // Check cache first
+  const cached = getCached(cacheKey);
+  if (cached) {
+    return res.json({ items: cached });
+  }
+
   const products = await fetchProducts({
     whereClause: filters.length ? `WHERE ${filters.join(' AND ')}` : '',
     params,
   });
 
+  // Cache for 5 minutes
+  setCached(cacheKey, products, 5 * 60 * 1000);
+
   res.json({ items: products });
 }
 
 export async function getProductById(req, res) {
+  const cacheKey = `product:${req.params.id}`;
+  
+  // Check cache first
+  const cached = getCached(cacheKey);
+  if (cached) {
+    return res.json(cached);
+  }
+
   const products = await fetchProducts({
     whereClause: 'WHERE p.id = :id',
     params: { id: req.params.id },
@@ -130,6 +162,9 @@ export async function getProductById(req, res) {
   if (!product) {
     throw new HttpError(404, 'Product not found');
   }
+
+  // Cache individual product for 10 minutes
+  setCached(cacheKey, product, 10 * 60 * 1000);
 
   res.json(product);
 }
@@ -150,8 +185,22 @@ export async function createProduct(req, res) {
     throw new HttpError(400, 'At least one product image is required');
   }
 
+  // Validate image paths are valid URLs or paths
+  imagePaths.forEach((path, idx) => {
+    if (typeof path !== 'string' || path.length === 0) {
+      throw new HttpError(500, `Invalid image path at index ${idx}`);
+    }
+  });
+
   const primaryImage = imagePaths[0];
   const imagesJson = JSON.stringify(imagePaths);
+
+  // Verify JSON is valid and parseable
+  try {
+    JSON.parse(imagesJson);
+  } catch (e) {
+    throw new HttpError(500, 'Failed to serialize images data');
+  }
 
   let insertedProductId = null;
   const connection = await pool.getConnection();
@@ -223,7 +272,25 @@ export async function createProduct(req, res) {
     params: { id: insertedProductId },
   });
 
-  res.status(201).json({ message: 'Product created successfully', product: products[0] });
+  const createdProduct = products[0];
+  if (!createdProduct) {
+    throw new HttpError(500, 'Failed to retrieve created product from database');
+  }
+
+  // Verify images were persisted to database
+  if (!createdProduct.images || createdProduct.images.length === 0) {
+    logger.error('Image persistence failure', {
+      insertedProductId,
+      requestImagePaths: imagePaths,
+      retrievedProduct: createdProduct,
+    });
+    throw new HttpError(500, 'Product created but images not persisted to database');
+  }
+
+  // Invalidate all product list caches on create
+  invalidateCache('products:list:*');
+
+  res.status(201).json({ message: 'Product created successfully', product: createdProduct });
 }
 
 export async function updateProduct(req, res) {
@@ -263,8 +330,28 @@ export async function updateProduct(req, res) {
 
   // Fall back to existing product images if nothing provided
   const finalImages = allImages.length > 0 ? allImages : (existingProducts[0].images || [existingProducts[0].image]);
-  const primaryImage = finalImages[0] || existingProducts[0].image;
+  
+  // Validate final images
+  if (!finalImages || finalImages.length === 0) {
+    throw new HttpError(400, 'Product must have at least one image');
+  }
+
+  // Verify all final images are valid strings
+  finalImages.forEach((img, idx) => {
+    if (typeof img !== 'string' || img.length === 0) {
+      throw new HttpError(500, `Invalid image at index ${idx} in finalImages`);
+    }
+  });
+
+  const primaryImage = finalImages[0];
   const imagesJson = JSON.stringify(finalImages);
+
+  // Verify JSON is valid and parseable
+  try {
+    JSON.parse(imagesJson);
+  } catch (e) {
+    throw new HttpError(500, 'Failed to serialize images data during update');
+  }
 
   // Remove images that were dropped (only local /uploads/ paths)
   const oldImages = existingProducts[0].images || [existingProducts[0].image];
@@ -343,7 +430,26 @@ export async function updateProduct(req, res) {
     whereClause: 'WHERE p.id = :id',
     params: { id: productId },
   });
-  res.json({ message: 'Product updated successfully', product: products[0] });
+
+  const updatedProduct = products[0];
+  if (!updatedProduct) {
+    throw new HttpError(500, 'Failed to retrieve updated product from database');
+  }
+
+  // Verify images were persisted to database
+  if (!updatedProduct.images || updatedProduct.images.length === 0) {
+    logger.error('Image persistence failure on update', {
+      productId,
+      sentImagePaths: finalImages,
+      retrievedProduct: updatedProduct,
+    });
+    throw new HttpError(500, 'Product updated but images not persisted to database');
+  }
+
+  // Invalidate caches on update
+  invalidateCache(`product:${productId}`, 'products:list:*');
+
+  res.json({ message: 'Product updated successfully', product: updatedProduct });
 }
 
 export async function deleteProduct(req, res) {
@@ -357,6 +463,9 @@ export async function deleteProduct(req, res) {
 
   // Remove the image file
   removeUploadedImage(rows[0].image_path);
+
+  // Invalidate caches on delete
+  invalidateCache(`product:${req.params.id}`, 'products:list:*');
 
   res.json({ message: 'Product deleted successfully' });
 }

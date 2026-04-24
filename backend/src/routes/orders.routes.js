@@ -6,9 +6,9 @@ import { createOrder, getOrderById, listOrders, updateOrderStatus, updatePayment
 const router = Router();
 
 router.post('/', asyncHandler(createOrder));
-router.get('/my-orders', asyncHandler(myOrders));
+router.get('/my-orders', authenticate, asyncHandler(myOrders));
 router.get('/', authenticate, requireAdmin, asyncHandler(listOrders));
-router.get('/:id', asyncHandler(getOrderById));
+router.get('/:id', authenticate, asyncHandler(getOrderById));
 router.patch('/bulk-status', authenticate, requireAdmin, asyncHandler(bulkUpdateOrderStatus));
 router.patch('/:id/status', authenticate, requireAdmin, asyncHandler(updateOrderStatus));
 router.patch('/:id/payment-status', authenticate, requireAdmin, asyncHandler(updatePaymentStatus));

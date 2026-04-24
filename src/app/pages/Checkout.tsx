@@ -110,9 +110,14 @@ export function Checkout() {
 
       if (paymentMethod === 'upi') {
         const paymentIntent = await createPaymentIntent({
-          amount: total,
           paymentMethod,
           customerEmail: shippingDetails.email,
+          couponCode: couponApplied || undefined,
+          items: items.map((item) => ({
+            productId: Number(item.id),
+            quantity: item.quantity,
+            size: item.selectedSize as 'S' | 'M' | 'L' | 'XL',
+          })),
         });
 
         paymentProvider = paymentIntent.provider;

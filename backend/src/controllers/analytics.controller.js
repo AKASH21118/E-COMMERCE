@@ -14,7 +14,8 @@ export async function getDashboardStats(req, res) {
 
   const [[productStats]] = await pool.query(`
     SELECT
-      COUNT(*) AS totalProducts
+      COUNT(*) AS totalProducts,
+      0 AS inactiveProducts
     FROM products
   `);
 
@@ -47,7 +48,7 @@ export async function getDashboardStats(req, res) {
 }
 
 export async function getRevenueChart(req, res) {
-  const days = Number(req.query.days) || 30;
+  const days = Math.max(1, Number(req.query.days) || 30);
 
   const [rows] = await pool.query(`
     SELECT
@@ -55,7 +56,7 @@ export async function getRevenueChart(req, res) {
       COUNT(*) AS orders,
       COALESCE(SUM(total_amount), 0) AS revenue
     FROM orders
-    WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL ? DAY)
+    WHERE created_at >= NOW() - (? * INTERVAL '1 day')
     GROUP BY DATE(created_at)
     ORDER BY date ASC
   `, [days]);

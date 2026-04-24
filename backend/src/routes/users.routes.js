@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { authenticate } from '../middleware/auth.js';
 import { requireAdmin } from '../middleware/auth.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
+import { authLimiter } from '../middleware/rateLimiter.js';
 import {
   getProfile, login, register, updateProfile,
   getAdminMobile, registerAdminMobile, updateAdminMobile,
@@ -10,8 +11,8 @@ import {
 
 const router = Router();
 
-router.post('/register', asyncHandler(register));
-router.post('/login', asyncHandler(login));
+router.post('/register', authLimiter, asyncHandler(register));
+router.post('/login', authLimiter, asyncHandler(login));
 router.get('/me', authenticate, asyncHandler(getProfile));
 router.put('/me', authenticate, asyncHandler(updateProfile));
 

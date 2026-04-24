@@ -7,7 +7,18 @@ function sortSizes(sizes) {
 function parseJsonField(value) {
   if (!value) return null;
   if (Array.isArray(value)) return value;
-  try { return JSON.parse(value); } catch { return null; }
+  try { 
+    const parsed = JSON.parse(value);
+    // Ensure it's an array
+    if (!Array.isArray(parsed)) {
+      console.warn('parseJsonField: expected array but got', typeof parsed);
+      return null;
+    }
+    return parsed;
+  } catch (e) {
+    console.error('Failed to parse JSON field:', e.message);
+    return null;
+  }
 }
 
 export function mapProductRows(rows) {
@@ -18,6 +29,18 @@ export function mapProductRows(rows) {
       const images = parseJsonField(row.images_json);
       const primaryImage = row.image_path || '';
 
+      // FAILSAFE: Ensure images array is always valid
+      // If images_json parsing failed, use primaryImage as fallback
+      // If no images available, return empty array (frontend will handle gracefully)
+      let finalImages = [];
+      if (images && Array.isArray(images) && images.length > 0) {
+        finalImages = images;
+      } else if (primaryImage) {
+        // Fallback: use primary image if images_json is empty/invalid
+        finalImages = [primaryImage];
+      }
+      // else: finalImages remains empty array (safe)
+
       productMap.set(row.id, {
         id: String(row.id),
         name: row.name,
@@ -27,8 +50,8 @@ export function mapProductRows(rows) {
         tags: row.tags ? row.tags.split(',').map(t => t.trim()).filter(Boolean) : [],
         category: row.category,
         description: row.description,
-        image: primaryImage,
-        images: images && images.length ? images : [primaryImage].filter(Boolean),
+        image: primaryImage || (finalImages.length > 0 ? finalImages[0] : ''),
+        images: finalImages,
         sizes: [],
         sizeStock: {},
         stock: 0,

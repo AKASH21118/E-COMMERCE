@@ -238,6 +238,11 @@ export async function getOrderById(req, res) {
   if (!order) {
     throw new HttpError(404, 'Order not found');
   }
+  const isAdmin = req.user?.role === 'admin';
+  const isOwner = req.user?.sub && order.user_id && String(order.user_id) === String(req.user.sub);
+  if (!isAdmin && !isOwner) {
+    throw new HttpError(403, 'You are not allowed to access this order');
+  }
 
   const [itemRows] = await pool.query('SELECT * FROM order_items WHERE order_id = ?', [req.params.id]);
   res.json({
@@ -318,21 +323,9 @@ export async function updateOrderStatus(req, res) {
 }
 
 export async function myOrders(req, res) {
-  const email = req.query.email;
   const userId = req.user?.sub;
-
-  if (!email && !userId) {
-    throw new HttpError(400, 'Email query parameter or authentication required');
-  }
-
-  let whereClause;
-  let params;
-  if (userId) {
-    whereClause = 'WHERE o.user_id = ?';
-    params = [userId];
-  } else {
-    whereClause = 'WHERE o.guest_email = ?';
-    params = [email];
+  if (!userId) {
+    throw new HttpError(401, 'Authentication required');
   }
 
   const [rows] = await pool.query(
@@ -341,10 +334,10 @@ export async function myOrders(req, res) {
              o.shipping_amount, o.total_amount, o.guest_email, o.guest_phone,
              o.shipping_first_name, o.shipping_last_name, o.created_at
       FROM orders o
-      ${whereClause}
+      WHERE o.user_id = ?
       ORDER BY o.created_at DESC
     `,
-    params,
+    [userId],
   );
 
   const orderIds = rows.map((r) => r.id);

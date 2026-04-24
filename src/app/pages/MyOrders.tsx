@@ -15,11 +15,10 @@ export function MyOrders() {
 
   const handleSearch = async (e: FormEvent) => {
     e.preventDefault();
-    if (!email.trim()) return;
     setLoading(true);
     setError('');
     try {
-      const result = await fetchMyOrders(email.trim());
+      const result = await fetchMyOrders();
       setOrders(result.items);
       setSearched(true);
     } catch (err) {

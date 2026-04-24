@@ -1,9 +1,18 @@
 import { z } from 'zod';
 import { pool } from '../config/db.js';
 import { HttpError } from '../utils/httpError.js';
+import { getCached, setCached, invalidateCache } from '../services/cache.service.js';
 
 export async function listPublicReviews(req, res) {
   const limit = Math.min(Number(req.query.limit) || 4, 20);
+  const cacheKey = `reviews:public:${limit}`;
+  
+  // Check cache first
+  const cached = getCached(cacheKey);
+  if (cached) {
+    return res.json({ items: cached });
+  }
+
   const [rows] = await pool.query(
     `SELECT r.id, r.customer_name, r.rating, r.comment, r.created_at,
             COALESCE(r.product_name, p.name) AS product_name
@@ -14,14 +23,20 @@ export async function listPublicReviews(req, res) {
      LIMIT ?`,
     [limit],
   );
-  res.json({ items: rows.map(r => ({
+
+  const items = rows.map(r => ({
     id: String(r.id),
     customerName: r.customer_name,
     rating: Number(r.rating),
     comment: r.comment,
     productName: r.product_name || '',
     createdAt: r.created_at,
-  })) });
+  }));
+
+  // Cache for 15 minutes
+  setCached(cacheKey, items, 15 * 60 * 1000);
+
+  res.json({ items });
 }
 
 export async function listReviews(req, res) {
@@ -62,6 +77,10 @@ export async function approveReview(req, res) {
     [req.params.id],
   );
   if (result.affectedRows === 0) throw new HttpError(404, 'Review not found');
+  
+  // Invalidate public reviews cache
+  invalidateCache('reviews:public:*');
+  
   res.json({ message: 'Review approved' });
 }
 
@@ -87,6 +106,9 @@ export async function createReview(req, res) {
      VALUES (?, ?, ?, ?, ?)`,
     [data.productId, data.customerName, data.customerEmail, data.rating, data.comment],
   );
+
+  // Invalidate public reviews cache when new review is added (even if not approved yet)
+  invalidateCache('reviews:public:*');
 
   res.status(201).json({ message: 'Review submitted for moderation', reviewId: String(result.insertId) });
 }
