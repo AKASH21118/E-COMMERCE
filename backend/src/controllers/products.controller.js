@@ -12,18 +12,11 @@ import env from '../config/env.js';
 function getUploadedFileUrl(file, resourceType = 'image') {
   if (!file) return null;
   
-  logger.info(`Debug: file object keys: ${Object.keys(file).join(', ')}`);
-  logger.info(`Debug: file.secure_url=${file.secure_url}, file.path=${file.path}, file.filename=${file.filename}`);
+  logger.info(`Debug: file.secure_url=${file.secure_url}, file.filename=${file.filename}`);
   
-  // Cloudinary storage sets secure_url directly
+  // Cloudinary: secure_url is set directly
   if (file.secure_url) {
     return file.secure_url;
-  }
-  
-  // Fallback: file.path might be public_id in some versions
-  if (file.path && !file.path.startsWith('/uploads')) {
-    // Build Cloudinary URL: https://res.cloudinary.com/{cloud_name}/image/upload/{public_id}
-    return `https://res.cloudinary.com/${env.cloudinaryCloudName}/${resourceType}/upload/${file.path}`;
   }
   
   // Local storage fallback

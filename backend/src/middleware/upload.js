@@ -9,14 +9,17 @@ import { logger } from '../utils/logger.js';
 // Use Cloudinary if configured, otherwise fall back to local storage
 const useCloudinary = env.cloudinaryCloudName && env.cloudinaryApiKey && env.cloudinaryApiSecret;
 
-function makeStorage(subfolder) {
+function makeStorage(subfolder, resourceType = 'image') {
   if (useCloudinary) {
-    logger.info(`Using Cloudinary storage for ${subfolder}`);
+    logger.info(`Using Cloudinary storage for ${subfolder} (resource_type: ${resourceType})`);
     return new CloudinaryStorage({
       cloudinary,
-      params: {
-        folder: `inout-fashion/${subfolder}`,
-        resource_type: 'auto',
+      params: async (req, file) => {
+        return {
+          folder: `inout-fashion/${subfolder}`,
+          resource_type: resourceType,
+          overwrite: false,
+        };
       },
     });
   }
@@ -46,19 +49,19 @@ function imageFilter(_req, file, callback) {
 }
 
 export const uploadProductImage = multer({
-  storage: makeStorage('products'),
+  storage: makeStorage('products', 'image'),
   fileFilter: imageFilter,
   limits: { fileSize: 5 * 1024 * 1024 },
 });
 
 export const uploadProductImages = multer({
-  storage: makeStorage('products'),
+  storage: makeStorage('products', 'image'),
   fileFilter: imageFilter,
   limits: { fileSize: 5 * 1024 * 1024, files: 5 },
 });
 
 export const uploadContentImage = multer({
-  storage: makeStorage('content'),
+  storage: makeStorage('content', 'image'),
   fileFilter: imageFilter,
   limits: { fileSize: 5 * 1024 * 1024 },
 });
@@ -71,19 +74,19 @@ function videoFilter(_req, file, callback) {
 }
 
 export const uploadVideo = multer({
-  storage: makeStorage('videos'),
+  storage: makeStorage('videos', 'video'),
   fileFilter: videoFilter,
   limits: { fileSize: 200 * 1024 * 1024 }, // 200 MB
 });
 
 export const uploadCarouselImage = multer({
-  storage: makeStorage('carousel'),
+  storage: makeStorage('carousel', 'image'),
   fileFilter: imageFilter,
   limits: { fileSize: 5 * 1024 * 1024 },
 });
 
 export const uploadCarouselVideo = multer({
-  storage: makeStorage('carousel'),
+  storage: makeStorage('carousel', 'video'),
   fileFilter: videoFilter,
   limits: { fileSize: 200 * 1024 * 1024 },
 });
