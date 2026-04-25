@@ -3,6 +3,18 @@ import type { Product } from '../data/products';
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '/api').replace(/\/$/, '');
 const API_ORIGIN = API_BASE_URL.startsWith('http') ? new URL(API_BASE_URL).origin : window.location.origin;
 
+// Warn if API URL might be misconfigured in production
+if (typeof window !== 'undefined' && import.meta.env.PROD) {
+  if (API_BASE_URL === '/api' || API_BASE_URL.includes('localhost')) {
+    console.warn(
+      '⚠️ API_BASE_URL appears to be misconfigured for production.\n' +
+      'Make sure VITE_API_BASE_URL environment variable is set correctly.\n' +
+      `Current value: ${API_BASE_URL}\n` +
+      'Expected format: https://your-backend-domain.com/api'
+    );
+  }
+}
+
 type RequestOptions = RequestInit & {
   skipJsonHeader?: boolean;
 };
@@ -93,6 +105,10 @@ function normalizeProduct(product: any): Product {
 export async function fetchProducts(params?: Record<string, string>) {
   const queryString = params ? `?${new URLSearchParams(params).toString()}` : '';
   const response = await request<{ items: any[] }>(`/products${queryString}`);
+  if (!response?.items || !Array.isArray(response.items)) {
+    console.error('Invalid products response:', response);
+    throw new Error('Invalid products response from server');
+  }
   return response.items.map(normalizeProduct);
 }
 
@@ -103,11 +119,19 @@ export async function fetchProductById(id: string) {
 
 export async function fetchOfferProducts() {
   const response = await request<{ items: any[] }>('/products?isOnOffer=true');
+  if (!response?.items || !Array.isArray(response.items)) {
+    console.error('Invalid offer products response:', response);
+    return [];
+  }
   return response.items.map(normalizeProduct);
 }
 
 export async function fetchCarouselProducts() {
   const response = await request<{ items: any[] }>('/products/carousel');
+  if (!response?.items || !Array.isArray(response.items)) {
+    console.error('Invalid carousel products response:', response);
+    return [];
+  }
   return response.items.map(normalizeProduct);
 }
 
@@ -135,6 +159,10 @@ export interface CarouselItem {
 
 export async function fetchCarouselItems(): Promise<CarouselItem[]> {
   const resp = await request<{ items: CarouselItem[] }>('/carousel');
+  if (!resp?.items || !Array.isArray(resp.items)) {
+    console.error('Invalid carousel items response:', resp);
+    return [];
+  }
   return resp.items.map(item => ({
     ...item,
     image: item.image ? resolveAssetUrl(item.image) : '',
