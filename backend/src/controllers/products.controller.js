@@ -12,15 +12,18 @@ import env from '../config/env.js';
 function getUploadedFileUrl(file, resourceType = 'image') {
   if (!file) return null;
   
-  // Cloudinary storage sets file.path as the public_id
+  logger.info(`Debug: file object keys: ${Object.keys(file).join(', ')}`);
+  logger.info(`Debug: file.secure_url=${file.secure_url}, file.path=${file.path}, file.filename=${file.filename}`);
+  
+  // Cloudinary storage sets secure_url directly
+  if (file.secure_url) {
+    return file.secure_url;
+  }
+  
+  // Fallback: file.path might be public_id in some versions
   if (file.path && !file.path.startsWith('/uploads')) {
     // Build Cloudinary URL: https://res.cloudinary.com/{cloud_name}/image/upload/{public_id}
     return `https://res.cloudinary.com/${env.cloudinaryCloudName}/${resourceType}/upload/${file.path}`;
-  }
-  
-  // Fallback for direct secure_url property (some versions of multer-storage-cloudinary)
-  if (file.secure_url) {
-    return file.secure_url;
   }
   
   // Local storage fallback
@@ -61,12 +64,16 @@ function parseSizeStock(rawValue) {
 }
 
 function getNewImagePaths(req) {
+  logger.info(`Debug: req.files=${JSON.stringify(req.files)}`);
+  
   if (req.files && req.files.length > 0) {
-    const paths = req.files.map(f => {
+    const paths = req.files.map((f, idx) => {
+      logger.info(`Debug: Processing file ${idx}: ${JSON.stringify(f)}`);
       const url = getUploadedFileUrl(f, 'image');
       if (!url) {
         throw new HttpError(500, 'Image upload failed - no URL returned from storage');
       }
+      logger.info(`Debug: Generated URL: ${url}`);
       return url;
     });
     if (paths.length === 0) {
