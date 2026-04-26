@@ -145,14 +145,14 @@ CREATE TABLE IF NOT EXISTS coupons (
 -- ── Reviews ──────────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS reviews (
   id             SERIAL      PRIMARY KEY,
-  product_id     INT         NOT NULL,
+  product_id     INT         NULL,
   customer_name  VARCHAR(200) NOT NULL,
   customer_email VARCHAR(255) NOT NULL,
   rating         INT         NOT NULL CHECK (rating BETWEEN 1 AND 5),
   comment        TEXT,
   is_approved    BOOLEAN     NOT NULL DEFAULT FALSE,
   created_at     TIMESTAMP   DEFAULT CURRENT_TIMESTAMP,
-  CONSTRAINT fk_review_product FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+  CONSTRAINT fk_review_product FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE SET NULL
 );
 
 -- ── Carousel Items ───────────────────────────────────────────────────────────

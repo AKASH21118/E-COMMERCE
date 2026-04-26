@@ -35,9 +35,7 @@ app.use(globalLimiter);
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-if (env.nodeEnv !== 'production') {
-  app.use('/uploads', express.static(path.resolve(process.cwd(), 'uploads')));
-}
+app.use('/uploads', express.static(path.resolve(process.cwd(), 'uploads')));
 
 app.use('/api', apiRoutes);
 
