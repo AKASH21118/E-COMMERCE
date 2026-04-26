@@ -124,14 +124,17 @@ function parseRaw(raw: RawHomepageContent): HomepageContent {
   try {
     if (raw.hero?.slides) {
       const slides: HeroSlide[] = JSON.parse(raw.hero.slides);
+      console.log('HomepageContent: Raw hero slides from API:', slides.map(s => ({ title: s.title, image: s.image })));
       // Resolve image URLs (handles /uploads/... paths)
       // Fall back to default slide image if the stored image is empty
       content.hero.slides = slides.map((s, i) => {
         const resolvedImage = resolveAssetUrl(s.image);
         const fallbackImage = DEFAULT_CONTENT.hero.slides[i]?.image ?? DEFAULT_CONTENT.hero.slides[0].image;
+        const finalImage = resolvedImage || fallbackImage;
+        console.log(`HomepageContent: Slide ${i} - Original: ${s.image}, Resolved: ${resolvedImage}, Final: ${finalImage}`);
         return {
           ...s,
-          image: resolvedImage || fallbackImage,
+          image: finalImage,
         };
       });
     }

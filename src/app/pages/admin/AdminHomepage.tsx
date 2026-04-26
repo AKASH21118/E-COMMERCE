@@ -124,6 +124,7 @@ function HeroTab() {
         setUploading(true);
         const res = await uploadContentImageFile(imageFile);
         imagePath = res.path;
+        console.log('HeroCarousel: Image uploaded, URL:', imagePath);
         setUploading(false);
       }
 
@@ -135,6 +136,7 @@ function HeroTab() {
         newSlides[editIdx] = updated;
       }
 
+      console.log('HeroCarousel: Saving slides with image URLs:', newSlides.map(s => s.image));
       await updateContentSection('hero', { slides: JSON.stringify(newSlides) });
       setSlides(newSlides);
       await refresh();
@@ -266,7 +268,7 @@ function HeroTab() {
 
           {/* Image upload */}
           <div>
-            <span className="label-text block mb-2">Slide Image</span>
+            <span className="label-text block mb-2">Slide Image *</span>
             <div className="flex items-start gap-4 flex-wrap">
               {imagePreview && (
                 <img src={imagePreview} alt="preview" className="w-32 h-20 object-cover border border-gray-200 bg-gray-100" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
@@ -279,13 +281,7 @@ function HeroTab() {
                 >
                   <Upload size={13} /> {imagePreview ? 'Replace Image' : 'Upload Image'}
                 </button>
-                <p className="text-[10px] text-muted-foreground">Or paste a URL below:</p>
-                <input
-                  value={imageFile ? '' : editSlide.image}
-                  onChange={e => { setEditSlide(p => ({ ...p, image: e.target.value })); setImagePreview(e.target.value); setImageFile(null); }}
-                  placeholder="https://... or /uploads/content/..."
-                  className="form-input w-64"
-                />
+                <p className="text-[10px] text-muted-foreground">Images are uploaded to Cloudinary and stored permanently.</p>
               </div>
             </div>
           </div>
