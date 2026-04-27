@@ -84,12 +84,12 @@ export function HomeReviews() {
 
   useEffect(() => {
     fetchFeaturedReviews(4)
-      .then(data => setReviews(data.length > 0 ? data : PLACEHOLDER_REVIEWS))
+      .then(data => setReviews(data))
       .catch(() => setReviews(PLACEHOLDER_REVIEWS))
       .finally(() => setLoading(false));
   }, []);
 
-  const displayReviews = loading ? PLACEHOLDER_REVIEWS : reviews;
+  const displayReviews = loading ? PLACEHOLDER_REVIEWS : (reviews.length > 0 ? reviews : PLACEHOLDER_REVIEWS);
 
   const prev = () => setCurrent(i => (i - 1 + displayReviews.length) % displayReviews.length);
   const next = () => setCurrent(i => (i + 1) % displayReviews.length);
