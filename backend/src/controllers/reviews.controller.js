@@ -140,7 +140,9 @@ export async function deleteReview(req, res) {
       logger.warn(`⚠️ Review ${req.params.id} not found`);
       throw new HttpError(404, 'Review not found');
     }
-    logger.info(`✅ Review ${req.params.id} deleted`);
+    // Invalidate public reviews cache when review is deleted
+    invalidateCache('reviews:public:*');
+    logger.info(`✅ Review ${req.params.id} deleted and cache invalidated`);
     res.json({ message: 'Review deleted' });
   } catch (err) {
     logger.error(`❌ Delete review error: ${err.message}`);
@@ -196,7 +198,9 @@ export async function updateReview(req, res) {
       logger.warn(`⚠️ Review ${id} not found`);
       throw new HttpError(404, 'Review not found');
     }
-    logger.info(`✅ Review ${id} updated`);
+    // Invalidate public reviews cache when review is updated
+    invalidateCache('reviews:public:*');
+    logger.info(`✅ Review ${id} updated and cache invalidated`);
     res.json({ message: 'Review updated' });
   } catch (err) {
     logger.error(`❌ Update review error: ${err.message}`);
@@ -221,7 +225,9 @@ export async function adminCreateReview(req, res) {
        VALUES (NULL, $1, $2, $3, $4, true)`,
       [data.customerName, 'admin@inoutfashion.in', data.rating, data.comment],
     );
-    logger.info(`✅ Admin review created with ID ${result.insertId}`);
+    // Invalidate public reviews cache when admin creates a review (it's auto-approved)
+    invalidateCache('reviews:public:*');
+    logger.info(`✅ Admin review created with ID ${result.insertId} and cache invalidated`);
     res.status(201).json({ message: 'Review created', reviewId: String(result.insertId) });
   } catch (err) {
     logger.error(`❌ Admin create review error: ${err.message}`);
