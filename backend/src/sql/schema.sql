@@ -146,6 +146,7 @@ CREATE TABLE IF NOT EXISTS coupons (
 CREATE TABLE IF NOT EXISTS reviews (
   id             SERIAL      PRIMARY KEY,
   product_id     INT         NULL,
+  product_name   VARCHAR(255) NULL,
   customer_name  VARCHAR(200) NOT NULL,
   customer_email VARCHAR(255) NOT NULL,
   rating         INT         NOT NULL CHECK (rating BETWEEN 1 AND 5),

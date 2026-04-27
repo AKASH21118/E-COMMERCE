@@ -58,7 +58,8 @@ export async function listReviews(req, res) {
   if (conditions.length) whereClause = `WHERE ${conditions.join(' AND ')}`;
 
   const [rows] = await pool.query(
-    `SELECT r.*, r.product_name AS custom_product_name, COALESCE(r.product_name, p.name) AS product_name
+    `SELECT r.id, r.product_id, r.product_name, r.customer_name, r.customer_email, r.rating, r.comment, r.is_approved, r.created_at,
+            COALESCE(r.product_name, p.name) AS resolved_product_name
      FROM reviews r
      LEFT JOIN products p ON p.id = r.product_id
      ${whereClause}
@@ -66,9 +67,16 @@ export async function listReviews(req, res) {
     params,
   );
 
-  res.json({
-    items: rows.map(mapReview),
+  const items = rows.map(row => {
+    const mapped = mapReview(row);
+    // If review doesn't have a product_name but we resolved one from products table, use it
+    if (!mapped.productName && row.resolved_product_name) {
+      mapped.productName = row.resolved_product_name;
+    }
+    return mapped;
   });
+
+  res.json({ items });
 }
 
 export async function approveReview(req, res) {
@@ -149,7 +157,7 @@ export async function adminCreateReview(req, res) {
 function mapReview(row) {
   return {
     id: String(row.id),
-    productId: String(row.product_id),
+    productId: row.product_id ? String(row.product_id) : null,
     productName: row.product_name || '',
     customProductName: row.custom_product_name || '',
     customerName: row.customer_name,

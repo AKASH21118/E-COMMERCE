@@ -4,6 +4,7 @@ import { pool } from '../config/db.js';
 import { HttpError } from '../utils/httpError.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import env from '../config/env.js';
+import { logger } from '../utils/logger.js';
 
 const VALID_SECTIONS = ['hero', 'announcement', 'usp', 'offer', 'categories'];
 
@@ -11,16 +12,36 @@ const VALID_SECTIONS = ['hero', 'announcement', 'usp', 'offer', 'categories'];
 function getUploadedFileUrl(file, resourceType = 'image') {
   if (!file) return null;
   
-  // Cloudinary: secure_url is set directly
-  if (file.secure_url) {
-    return file.secure_url;
+  logger.info(`🖼️ Processing content image file: ${JSON.stringify({
+    filename: file.filename,
+    secure_url: file.secure_url?.substring(0, 50),
+    url: file.url?.substring(0, 50),
+    public_id: file.public_id,
+    originalname: file.originalname
+  })}`);
+  
+  // Try Cloudinary properties in order of preference
+  const possibleUrls = [
+    file.secure_url,           // Cloudinary secure HTTPS URL
+    file.url,                  // Cloudinary fallback URL
+    file.path,                 // Sometimes Cloudinary uses path
+    file.location,             // AWS S3 style
+  ].filter(Boolean);
+  
+  if (possibleUrls.length > 0) {
+    const selectedUrl = possibleUrls[0];
+    logger.info(`✅ Using Cloudinary content image URL: ${selectedUrl}`);
+    return selectedUrl;
   }
   
   // Local storage fallback
   if (file.filename) {
-    return `/uploads/content/${file.filename}`;
+    const localPath = `/uploads/content/${file.filename}`;
+    logger.info(`✅ Using local content filename: ${localPath}`);
+    return localPath;
   }
   
+  logger.error(`❌ No valid content image URL found. File: ${JSON.stringify(file)}`);
   return null;
 }
 
@@ -91,13 +112,28 @@ export const updateSectionContent = asyncHandler(async (req, res) => {
 // Accepts a single image file (field name: "image")
 // Returns { path: Cloudinary URL or '/uploads/content/filename.ext' }
 export const handleContentImageUpload = asyncHandler(async (req, res) => {
+  logger.info(`🖼️ Content image upload called`);
+  logger.info(`🖼️ req.file exists: ${req.file ? 'yes' : 'no'}`);
+  
   if (!req.file) {
+    logger.error(`❌ No image file provided`);
     throw new HttpError(400, 'No image file provided (field name must be "image")');
   }
+  
+  logger.info(`🖼️ Processing uploaded content image: ${JSON.stringify({
+    filename: req.file.filename,
+    secure_url: req.file.secure_url?.substring(0, 50),
+    url: req.file.url?.substring(0, 50),
+    mimetype: req.file.mimetype
+  })}`);
+  
   const imagePath = getUploadedFileUrl(req.file, 'image');
   if (!imagePath) {
+    logger.error(`❌ Content image upload failed - unable to generate URL`);
     throw new HttpError(500, 'Failed to generate image URL');
   }
+  
+  logger.info(`✅ Successfully uploaded content image: ${imagePath}`);
   res.status(201).json({ path: imagePath });
 });
 

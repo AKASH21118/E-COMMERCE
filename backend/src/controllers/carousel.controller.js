@@ -3,21 +3,42 @@ import path from 'path';
 import { pool } from '../config/db.js';
 import { HttpError } from '../utils/httpError.js';
 import env from '../config/env.js';
+import { logger } from '../utils/logger.js';
 
 // Helper function to convert uploaded file to proper URL
 function getUploadedFileUrl(file, resourceType = 'image') {
   if (!file) return null;
   
-  // Cloudinary: secure_url is set directly
-  if (file.secure_url) {
-    return file.secure_url;
+  logger.info(`🎠 Processing carousel image file: ${JSON.stringify({
+    filename: file.filename,
+    secure_url: file.secure_url?.substring(0, 50),
+    url: file.url?.substring(0, 50),
+    public_id: file.public_id,
+    originalname: file.originalname
+  })}`);
+  
+  // Try Cloudinary properties in order of preference
+  const possibleUrls = [
+    file.secure_url,           // Cloudinary secure HTTPS URL
+    file.url,                  // Cloudinary fallback URL
+    file.path,                 // Sometimes Cloudinary uses path
+    file.location,             // AWS S3 style
+  ].filter(Boolean);
+  
+  if (possibleUrls.length > 0) {
+    const selectedUrl = possibleUrls[0];
+    logger.info(`✅ Using Cloudinary carousel image URL: ${selectedUrl}`);
+    return selectedUrl;
   }
   
   // Local storage fallback
   if (file.filename) {
-    return `/uploads/carousel/${file.filename}`;
+    const localPath = `/uploads/carousel/${file.filename}`;
+    logger.info(`✅ Using local carousel filename: ${localPath}`);
+    return localPath;
   }
   
+  logger.error(`❌ No valid carousel image URL found. File: ${JSON.stringify(file)}`);
   return null;
 }
 
@@ -86,16 +107,35 @@ export async function addProductToCarousel(req, res) {
 
 // ── Upload image to carousel ──
 export async function addImageToCarousel(req, res) {
-  if (!req.file) throw new HttpError(400, 'Image file is required');
+  logger.info(`🎠 Carousel image upload called`);
+  logger.info(`🎠 req.file exists: ${req.file ? 'yes' : 'no'}`);
+  
+  if (!req.file) {
+    logger.error(`❌ No carousel image file provided`);
+    throw new HttpError(400, 'Image file is required');
+  }
 
   await enforceLimit();
 
+  logger.info(`🎠 Processing uploaded carousel image: ${JSON.stringify({
+    filename: req.file.filename,
+    secure_url: req.file.secure_url?.substring(0, 50),
+    url: req.file.url?.substring(0, 50),
+    mimetype: req.file.mimetype
+  })}`);
+
   const mediaUrl = getUploadedFileUrl(req.file, 'image');
-  if (!mediaUrl) throw new HttpError(500, 'Failed to generate image URL');
+  if (!mediaUrl) {
+    logger.error(`❌ Carousel image upload failed - unable to generate URL`);
+    throw new HttpError(500, 'Failed to generate image URL');
+  }
+  
   const title = req.body.title || '';
   const subtitle = req.body.subtitle || '';
   const linkUrl = req.body.linkUrl || '';
   const sortOrder = req.body.sortOrder ?? 0;
+
+  logger.info(`✅ Successfully uploaded carousel image: ${mediaUrl}`);
 
   await pool.query(
     'INSERT INTO carousel_items (type, media_url, title, subtitle, link_url, sort_order) VALUES (?, ?, ?, ?, ?, ?)',
