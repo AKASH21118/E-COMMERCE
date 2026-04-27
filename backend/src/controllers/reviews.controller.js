@@ -159,7 +159,6 @@ function mapReview(row) {
     id: String(row.id),
     productId: row.product_id ? String(row.product_id) : null,
     productName: row.product_name || '',
-    customProductName: row.custom_product_name || '',
     customerName: row.customer_name,
     customerEmail: row.customer_email,
     rating: Number(row.rating),
