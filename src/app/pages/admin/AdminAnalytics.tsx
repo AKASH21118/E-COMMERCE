@@ -39,7 +39,7 @@ export function AdminAnalytics() {
     );
   }
 
-  const maxRevenue = Math.max(...revenue.map((r) => r.revenue), 1);
+  const maxRevenue = Math.max(...revenue.map((r) => r.revenue || 0), 1);
 
   return (
     <div>
@@ -59,10 +59,10 @@ export function AdminAnalytics() {
 
       {/* Key Metrics */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <StatCard icon={DollarSign} label="Total Revenue" value={`₹${stats.totalRevenue.toFixed(2)}`} color="bg-green-50 text-green-600" />
-        <StatCard icon={ShoppingCart} label="Total Orders" value={stats.totalOrders} color="bg-blue-50 text-blue-600" />
-        <StatCard icon={TrendingUp} label="Customers" value={stats.totalCustomers} color="bg-purple-50 text-purple-600" />
-        <StatCard icon={BarChart3} label="Discounts Given" value={`₹${stats.totalDiscounts.toFixed(2)}`} color="bg-amber-50 text-amber-600" />
+        <StatCard icon={DollarSign} label="Total Revenue" value={`₹${(stats.totalRevenue || 0).toFixed(2)}`} color="bg-green-50 text-green-600" />
+        <StatCard icon={ShoppingCart} label="Total Orders" value={stats.totalOrders || 0} color="bg-blue-50 text-blue-600" />
+        <StatCard icon={TrendingUp} label="Customers" value={stats.totalCustomers || 0} color="bg-purple-50 text-purple-600" />
+        <StatCard icon={BarChart3} label="Discounts Given" value={`₹${(stats.totalDiscounts || 0).toFixed(2)}`} color="bg-amber-50 text-amber-600" />
       </div>
 
       <div className="grid lg:grid-cols-2 gap-6 mb-6">
@@ -81,10 +81,10 @@ export function AdminAnalytics() {
                   <div className="flex-1 bg-gray-100 rounded-full h-5 overflow-hidden">
                     <div
                       className="h-full bg-foreground/80 rounded-full flex items-center justify-end px-2"
-                      style={{ width: `${Math.max((day.revenue / maxRevenue) * 100, 2)}%` }}
+                      style={{ width: `${Math.max(((day.revenue || 0) / maxRevenue) * 100, 2)}%` }}
                     >
                       <span className="text-[10px] text-white font-medium whitespace-nowrap">
-                        ₹{day.revenue.toFixed(0)}
+                        ₹{(day.revenue || 0).toFixed(0)}
                       </span>
                     </div>
                   </div>
