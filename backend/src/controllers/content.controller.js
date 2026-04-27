@@ -56,6 +56,36 @@ export const getAllContent = asyncHandler(async (_req, res) => {
     if (!result[row.section]) result[row.section] = {};
     result[row.section][row.key_name] = row.value;
   }
+
+  // HERO: Parse slides and ensure image field is always populated
+  if (result.hero?.slides) {
+    try {
+      const slides = JSON.parse(result.hero.slides);
+      logger.info(`🎨 Parsed hero slides: ${slides.length} slides`);
+      
+      // Map each slide to ensure image field is always present and valid
+      const mappedSlides = slides.map((slide, idx) => {
+        // Extract image from either image or images array
+        const imageUrl = slide.image || (Array.isArray(slide.images) && slide.images[0]) || null;
+        
+        if (!imageUrl) {
+          logger.warn(`⚠️ Hero slide ${idx} missing image field`);
+        } else {
+          logger.info(`✅ Hero slide ${idx} image: ${imageUrl.substring(0, 50)}...`);
+        }
+
+        return {
+          ...slide,
+          image: imageUrl || '' // Ensure image field always exists
+        };
+      });
+
+      result.hero.slides = JSON.stringify(mappedSlides);
+    } catch (e) {
+      logger.error(`❌ Failed to parse hero slides JSON: ${e.message}`);
+    }
+  }
+
   res.json(result);
 });
 
@@ -73,6 +103,36 @@ export const getSectionContent = asyncHandler(async (req, res) => {
   for (const row of rows) {
     result[row.key_name] = row.value;
   }
+
+  // HERO: Parse slides and ensure image field is always populated
+  if (section === 'hero' && result.slides) {
+    try {
+      const slides = JSON.parse(result.slides);
+      logger.info(`🎨 Parsed hero slides (getSectionContent): ${slides.length} slides`);
+      
+      // Map each slide to ensure image field is always present and valid
+      const mappedSlides = slides.map((slide, idx) => {
+        // Extract image from either image or images array
+        const imageUrl = slide.image || (Array.isArray(slide.images) && slide.images[0]) || null;
+        
+        if (!imageUrl) {
+          logger.warn(`⚠️ Hero slide ${idx} missing image field`);
+        } else {
+          logger.info(`✅ Hero slide ${idx} image: ${imageUrl.substring(0, 50)}...`);
+        }
+
+        return {
+          ...slide,
+          image: imageUrl || '' // Ensure image field always exists
+        };
+      });
+
+      result.slides = JSON.stringify(mappedSlides);
+    } catch (e) {
+      logger.error(`❌ Failed to parse hero slides JSON: ${e.message}`);
+    }
+  }
+
   res.json(result);
 });
 

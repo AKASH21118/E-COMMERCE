@@ -64,20 +64,32 @@ export async function listCarouselItems(req, res) {
     LIMIT 6
   `);
 
-  const items = rows.map(r => ({
-    id: r.id,
-    type: r.type,
-    productId: r.product_id ? String(r.product_id) : null,
-    mediaUrl: r.media_url || null,
-    title: r.type === 'product' ? (r.product_name || r.title) : r.title,
-    subtitle: r.type === 'product'
-      ? `₹${r.product_discount_price || r.product_price}`
-      : r.subtitle,
-    image: r.type === 'product' ? (r.product_image || '') : (r.media_url || ''),
-    linkUrl: r.type === 'product' ? `/product/${r.product_id}` : r.link_url,
-    sortOrder: r.sort_order,
-  }));
+  const items = rows.map(r => {
+    // Ensure image field is always populated
+    const imageUrl = r.type === 'product' 
+      ? (r.product_image || '') 
+      : (r.media_url || '');
 
+    if (!imageUrl && r.type === 'image') {
+      logger.warn(`⚠️ Carousel item ${r.id} (type: ${r.type}) has no image URL`);
+    }
+
+    return {
+      id: r.id,
+      type: r.type,
+      productId: r.product_id ? String(r.product_id) : null,
+      mediaUrl: r.media_url || null,
+      title: r.type === 'product' ? (r.product_name || r.title) : r.title,
+      subtitle: r.type === 'product'
+        ? `₹${r.product_discount_price || r.product_price}`
+        : r.subtitle,
+      image: imageUrl, // Always include image field with proper URL
+      linkUrl: r.type === 'product' ? `/product/${r.product_id}` : r.link_url,
+      sortOrder: r.sort_order,
+    };
+  });
+
+  logger.info(`📊 Listed ${items.length} carousel items`);
   res.json({ items });
 }
 
@@ -147,16 +159,35 @@ export async function addImageToCarousel(req, res) {
 
 // ── Upload video to carousel ──
 export async function addVideoToCarousel(req, res) {
-  if (!req.file) throw new HttpError(400, 'Video file is required');
+  logger.info(`🎬 Carousel video upload called`);
+  logger.info(`🎬 req.file exists: ${req.file ? 'yes' : 'no'}`);
+
+  if (!req.file) {
+    logger.error(`❌ No carousel video file provided`);
+    throw new HttpError(400, 'Video file is required');
+  }
 
   await enforceLimit();
 
+  logger.info(`🎬 Processing uploaded carousel video: ${JSON.stringify({
+    filename: req.file.filename,
+    secure_url: req.file.secure_url?.substring(0, 50),
+    url: req.file.url?.substring(0, 50),
+    mimetype: req.file.mimetype
+  })}`);
+
   const mediaUrl = getUploadedFileUrl(req.file, 'video');
-  if (!mediaUrl) throw new HttpError(500, 'Failed to generate video URL');
+  if (!mediaUrl) {
+    logger.error(`❌ Carousel video upload failed - unable to generate URL`);
+    throw new HttpError(500, 'Failed to generate video URL');
+  }
+
   const title = req.body.title || '';
   const subtitle = req.body.subtitle || '';
   const linkUrl = req.body.linkUrl || '';
   const sortOrder = req.body.sortOrder ?? 0;
+
+  logger.info(`✅ Successfully uploaded carousel video: ${mediaUrl}`);
 
   await pool.query(
     'INSERT INTO carousel_items (type, media_url, title, subtitle, link_url, sort_order) VALUES (?, ?, ?, ?, ?, ?)',
